@@ -3,7 +3,7 @@
 Man::Man(float x, float y, float s) {
     position = { x, y };
     speed = s;
-
+    basespeed = s;
     // 加载图片（翻转）
     Image img = LoadImage("C:/Users/余林隆/Desktop/壁纸/5AEC4FEE7B17CE987CA78BF7AE121722.png");
     ImageResize(&img, 140,180 );
@@ -15,8 +15,10 @@ Man::Man(float x, float y, float s) {
     // 初始化行走帧尺寸
     character_width = texture.width / 3;
     character_height = texture.height / 4;
-
-
+    //初始化熔岩相关
+    isLavaInvincible = false;
+    lavaInvincibleTime = 0.0f;
+    lavaInvincibleDuration = 1.0f;
     // 默认人物状态（站立，向下）
     numberx = 1;
     numbery = 0;
@@ -32,6 +34,20 @@ Man::Man(float x, float y, float s) {
 
 
 void Man::Update() {
+    // 如果已经到达终点或死亡，不处理移动
+    if (isFinished || isDead) {
+        // 只是更新计时器
+        if (isFinished && winTextTimer > 0) {
+            winTextTimer -= GetFrameTime();
+        }
+        if (showLavaWarning && lavaWarningTimer > 0) {
+            lavaWarningTimer -= GetFrameTime();
+            if (lavaWarningTimer <= 0) {
+                showLavaWarning = false;
+            }
+        }
+        return;
+    }
     float dt = GetFrameTime();
     bool moving = false;
 
@@ -155,7 +171,55 @@ void Man::Update() {
         position.x += plannedMoveX;
         position.y += plannedMoveY;
     }
+    // 4. 【新增】检测当前位置的地块类型并处理效果
+    int tileType = GetCurrentTileType();
 
+    // 重置速度为基本速度
+    speed = basespeed;
+
+    // 根据地块类型处理
+    switch (tileType) {
+    case -2: // 终点
+        isFinished = true;
+        winTextTimer = 3.0f; // 显示3秒胜利信息
+        break;
+
+    case 2: // 草地，减速三分之一
+        speed = basespeed * 0.33f; // 减速到三分之一
+        break;
+
+    case 3: // 熔岩
+        // 更新熔岩无敌计时器
+        if (isLavaInvincible) {
+            lavaInvincibleTime -= dt;
+            if (lavaInvincibleTime <= 0) {
+                isLavaInvincible = false;
+            }
+        }
+
+        // 如果不在无敌状态，处理熔岩效果
+        if (!isLavaInvincible) {
+            lavaStepCount++;
+
+            if (lavaStepCount == 1) {
+                // 第一次踩到熔岩，显示警告并进入无敌状态
+                showLavaWarning = true;
+                lavaWarningTimer = 2.0f;
+                isLavaInvincible = true;
+                lavaInvincibleTime = lavaInvincibleDuration;
+            }
+            else if (lavaStepCount >= 2) {
+                // 第二次踩到熔岩，游戏失败
+                isDead = true;
+            }
+        }
+        break;
+    default:
+        // 其他地块不做特殊处理
+        break;
+    }
+
+    
     // 5. 窗口边界限制
     float w = (float)GetScreenWidth();
     float h = (float)GetScreenHeight();
@@ -186,6 +250,12 @@ void Man::Update() {
 
     if (hurtTextTimer > 0) {
         hurtTextTimer -= dt;
+    }// 8. 熔岩警告计时器递减
+    if (showLavaWarning && lavaWarningTimer > 0) {
+        lavaWarningTimer -= dt;
+        if (lavaWarningTimer <= 0) {
+            showLavaWarning = false;
+        }
     }
 
     // 8. 更新帧矩形
@@ -196,13 +266,78 @@ void Man::Update() {
         character_height
     };
 }
+int Man::GetCurrentTileType() {
+    if (migongptr == nullptr) return 0; // 默认普通地面
+
+    const auto& map = migongptr->GetDitu();
+    float offsetX = migongptr->GetPianyiX();
+    float offsetY = migongptr->GetPianyiY();
+
+    // 计算人物中心点
+    float centerX = position.x + character_width / 2.0f;
+    float centerY = position.y + character_height / 2.0f;
+
+    // 将屏幕坐标转换为地图格子坐标
+    int gridX = static_cast<int>((centerX - offsetX) / 48);
+    int gridY = static_cast<int>((centerY - offsetY) / 48);
+
+    // 检查格子坐标是否有效
+    if (gridY >= 0 && gridY < map.size() && gridX >= 0 && gridX < map[0].size()) {
+        return map[gridY][gridX];
+    }
+
+    return 0; // 默认普通地面
+}
 void Man::Draw() {
     DrawTextureRec(texture, frameRect, position, WHITE);
     // 受伤提示文字
     if (hurtTextTimer > 0) {
         DrawText("-1 HP", position.x, position.y - 20, 20, RED);
+    } // 熔岩警告
+    if (showLavaWarning && lavaWarningTimer > 0) {
+        const char* warningText = "WARNING: You stepped on lava! Step again to die!";
+        int textWidth = MeasureText(warningText, 30);
+        int screenWidth = GetScreenWidth();
+        DrawText(warningText, (screenWidth - textWidth) / 2, 50, 30, ORANGE);
+    }// 胜利显示
+    if (isFinished && winTextTimer > 0) {
+        const char* winText = "VICTORY! You reached the destination!";
+        int textWidth = MeasureText(winText, 50);
+        int screenWidth = GetScreenWidth();
+        int screenHeight = GetScreenHeight();
+
+        // 半透明背景
+        DrawRectangle(0, screenHeight / 2 - 60, screenWidth, 120, Fade(BLACK, 0.7f));
+
+        // 胜利文字
+        DrawText(winText, (screenWidth - textWidth) / 2, screenHeight / 2 - 25, 50, GREEN);
+
+        // 倒计时提示
+        std::string countdownText = "Game ends in " + std::to_string((int)ceil(winTextTimer)) + " seconds";
+        int countdownWidth = MeasureText(countdownText.c_str(), 20);
+        DrawText(countdownText.c_str(), (screenWidth - countdownWidth) / 2, screenHeight / 2 + 35, 20, YELLOW);
+    }
+
+    // 游戏失败显示（熔岩）
+    if (isDead) {
+        const char* loseText = "GAME OVER! You were burned by lava!";
+        int textWidth = MeasureText(loseText, 50);
+        int screenWidth = GetScreenWidth();
+        int screenHeight = GetScreenHeight();
+
+        // 半透明背景
+        DrawRectangle(0, screenHeight / 2 - 60, screenWidth, 120, Fade(BLACK, 0.7f));
+
+        // 失败文字
+        DrawText(loseText, (screenWidth - textWidth) / 2, screenHeight / 2 - 25, 50, RED);
+
+        // 提示重新开始
+        const char* restartText = "Press R to restart the game";
+        int restartWidth = MeasureText(restartText, 30);
+        DrawText(restartText, (screenWidth - restartWidth) / 2, screenHeight / 2 + 35, 30, YELLOW);
     }
 }
+
 void Man::setMigong(MiGong* m) {
     migongptr = m;
 }

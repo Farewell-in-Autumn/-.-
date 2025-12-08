@@ -84,6 +84,36 @@ int main(void) {
             EndDrawing();
             continue;
         }
+        // 如果游戏结束（熔岩死亡），检查是否按R键重新开始
+        if (player.isDead && IsKeyPressed(KEY_R)) {
+            // 重置玩家状态
+            player.blood = 3;
+            player.isDead = false;
+            player.lavaStepCount = 0;
+            player.showLavaWarning = false;
+            player.isFinished = false;
+            player.isLavaInvincible = false;
+            player.lavaInvincibleTime = 0.0f;
+            // 重置玩家位置到起点
+            Pos star = migong.GetQidian();
+            player.position.x = star.second * 48 + migong.GetPianyiX();
+            player.position.y = star.first * 48 + migong.GetPianyiY();
+        }
+
+        // 如果游戏胜利（到达终点）并且计时结束，可以退出或重置游戏
+        if (player.isFinished && player.winTextTimer <= 0) {
+            // 可以选择自动重新开始或等待按键
+            // 例如：按空格键重新开始
+            if (IsKeyPressed(KEY_SPACE)) {
+                player.isFinished = false;
+                player.winTextTimer = 3.0f;
+
+                // 重置玩家位置到起点
+                Pos star = migong.GetQidian();
+                player.position.x = star.second * 48 + migong.GetPianyiX();
+                player.position.y = star.first * 48 + migong.GetPianyiY();
+            }
+        }
 
         // 更新主角与怪物
         player.Update();
