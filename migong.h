@@ -40,7 +40,7 @@ private:
 public:
     MiGong();
     ~MiGong();
-
+   
     // ¼ÓÔØÃÔ¹¬ÎÄ¼ş
     bool JiaZaiDiTu(const std::string& wenjianming);
 

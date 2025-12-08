@@ -2,9 +2,10 @@
 #define MAN_H
 
 #include <raylib.h>
-
+#include"migong.h"
 class Man {
 public:
+
     Vector2 position;  // 人物的位置
     float speed;       // 人物移动速度
     Texture2D texture; //人物图片
@@ -21,6 +22,11 @@ public:
     float hurtTextTimer = 0.0f;  //  加这里，受伤提示计时器
     int blood = 3;
     Man(float x, float y, float s = 100.0f);
+    MiGong* migongptr = nullptr;//接收迷宫指针
+    void setMigong(MiGong* m);
+   
+    // 碰撞检测相关变量
+    float collisionOffset = 8.0f;  // 碰撞边界偏移（让碰撞框比人物小一点）
     ~Man() ;
     void Update();     // 处理键盘并移动人物
     void Draw();       // 画出人物

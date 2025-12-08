@@ -1,6 +1,6 @@
 #ifndef MASTER_H
 #define MASTER_H
-
+#include"migong.h"
 #include <raylib.h>
 class MASTER {
 public:
@@ -18,7 +18,9 @@ public:
     float movetime=2.0f;
     float movetimer = 0;
     int move=1;
-    
+    MiGong* migongptr = nullptr;//接收迷宫指针
+    void setMigong(MiGong* m);
+
     MASTER(float x, float y, float s = 100.0f);
     ~MASTER();
     void Update();     // 处理键盘并移动人物
