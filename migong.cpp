@@ -219,3 +219,44 @@ std::string MiGong::HuoQuDiTuXinxi() const {
     ss << " | End: (" << (int)zhongdianWeizhi.y << "," << (int)zhongdianWeizhi.x << ")";
     return ss.str();
 }
+bool MiGong::LoadFromData(const std::vector<std::vector<int>>& mazeData) {
+    if (mazeData.empty() || mazeData[0].empty()) {
+        return false;
+    }
+
+    ditu = mazeData;
+    hangshu = ditu.size();        // 替换 rows
+    lieshu = ditu[0].size();      // 替换 cols
+
+    // 查找起点和终点
+    bool foundStart = false, foundEnd = false;
+    for (int i = 0; i < hangshu; i++) {        // 替换 rows  hangshu
+        for (int j = 0; j < lieshu; j++) {     // 替换 cols  lieshu
+            if (ditu[i][j] == -1) {
+                qidianWeizhi = { (float)j, (float)i };  // 替换 qidian  qidianWeizhi
+                foundStart = true;
+            }
+            else if (ditu[i][j] == -2) {
+                zhongdianWeizhi = { (float)j, (float)i }; // 替换 zhongdian  zhongdianWeizhi
+                foundEnd = true;
+            }
+        }
+    }
+
+    // 如果没有找到起点或终点，设置默认值
+    if (!foundStart) {
+        qidianWeizhi = { 1, 1 };           // 替换 qidian qidianWeizhi
+        if (1 < hangshu && 1 < lieshu) {   // 确保坐标有效
+            ditu[1][1] = -1;
+        }
+    }
+    if (!foundEnd) {
+        zhongdianWeizhi = { (float)(lieshu - 2), (float)(hangshu - 2) }; // 替换 zhongdian  zhongdianWeizhi
+        if ((hangshu - 2) >= 0 && (hangshu - 2) < hangshu &&
+            (lieshu - 2) >= 0 && (lieshu - 2) < lieshu) {  // 确保坐标有效
+            ditu[hangshu - 2][lieshu - 2] = -2;
+        }
+    }
+
+    return true;
+}

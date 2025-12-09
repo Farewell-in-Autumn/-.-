@@ -3,6 +3,7 @@
 
 #include <raylib.h>
 #include"migong.h"
+#include"mazegenerator.h"
 class Man {
 public:
 

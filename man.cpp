@@ -5,7 +5,7 @@ Man::Man(float x, float y, float s) {
     speed = s;
     basespeed = s;
     // ¼ÓÔØÍ¼Æ¬£¨·­×ª£©
-    Image img = LoadImage("C:/Users/ÓàÁÖÂ¡/Desktop/±ÚÖ½/5AEC4FEE7B17CE987CA78BF7AE121722.png");
+    Image img = LoadImage("character.png");
     ImageResize(&img, 140,180 );
     texture = LoadTextureFromImage(img);
     UnloadImage(img);

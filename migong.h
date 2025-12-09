@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
-
+#include"mazegenerator.h"
 using Pos = std::pair<int, int>;
 
 // 地块类型
@@ -40,7 +40,8 @@ private:
 public:
     MiGong();
     ~MiGong();
-   
+    //随机迷宫
+    bool LoadFromData(const std::vector<std::vector<int>>& mazeData);
     // 加载迷宫文件
     bool JiaZaiDiTu(const std::string& wenjianming);
 
